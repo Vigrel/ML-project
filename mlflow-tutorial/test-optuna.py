@@ -7,6 +7,8 @@ import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import StratifiedShuffleSplit, cross_val_predict
+import datetime
+
 
 from pipeline import LogAtt
 
@@ -55,7 +57,11 @@ def objective(trial):
         "min_samples_split": trial.suggest_int("min_samples_split", 2, 10),
         "min_samples_leaf": trial.suggest_int("min_samples_leaf", 2, 10)
     }
-    with mlflow.start_run():
+    #Get datetime string:
+    now = datetime.datetime.now()
+    now_str = now.strftime("%Y-%m-%d_%H:%M:%S")
+
+    with mlflow.start_run(run_name=f"trial_{trial.number}_{now_str}"):
         rf = RandomForestClassifier(**param)
 
         rf.fit(X_train_pp, Y_train_pp)
@@ -63,7 +69,6 @@ def objective(trial):
         preds = rf.predict(X_test_pp)
         pred_labels = np.rint(preds)
         accuracy = accuracy_score(Y_test_pp, pred_labels)
-
         # Log the hyperparameters and the metrics
         mlflow.log_param("n_estimators", param["n_estimators"])
         mlflow.log_param("criterion", param["criterion"])
